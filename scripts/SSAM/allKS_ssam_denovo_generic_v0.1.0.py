@@ -5,6 +5,9 @@
 
 print ("Loading libraries")
 
+from array import array
+from PIL import Image
+
 import numpy as np;
 
 import pandas as pd;
@@ -33,11 +36,13 @@ from matplotlib.colors import to_rgba;
 
 from datetime import datetime
 
-files = [file for file in os.listdir('./all_csv_files') if file.endswith('.csv')]
+# files = []
 
-print(files)
+sample_ids = ["219KS"]
 
-for sample in files: 
+# for sample_id in os.listdiros.path.join(__file__,'../../data/all_csv_files') if file.endswith('.csv')]
+
+for sample_id in sample_ids: 
 
     now = datetime.now()
 
@@ -49,30 +54,27 @@ for sample in files:
 
     print ("Reading parameters")
 
-    #sample = "220KS_Decoded_LowThreshold.csv"
+    sample = sample_id+"_Decoded_LowThreshold.csv"
 
     #sample = "220KS_AP4_Decoded_LowThreshold_noPOU5F1_nSLC26A3_noFABP1_noBBC3_noANTXR1_noENG_noFCGR3A_ssam.csv"
 
     olympus_um_per_pixel = 0.1625
 
-    df = pd.read_csv(os.path.join('all_csv_files',sample),usecols=['X', 'Y', 'gene'])
+    df = pd.read_csv(os.path.join(os.path.dirname(__file__),"..","..","data",sample_id,sample),usecols=['X', 'Y', 'gene'])
     df.columns=['target', 'x', 'y']
     df["x"]*= olympus_um_per_pixel
     df["y"]*= olympus_um_per_pixel
     print(df)
 
-    outdir = "../Output_files/220KS"
+    outdir = os.path.join(os.path.dirname(__file__),"..","..","output",sample_id,"ssam",date_time_str,'')
 
     print ("Input spot file: " + sample )
 
-    print ("Output folder: " + outdir + date_time_str + "/")
+    print ("Output folder: " + outdir)
 
-    os.mkdir(outdir + date_time_str + "/", mode = 0o777)
+    os.makedirs(outdir,exist_ok=True, mode = 0o777)
 
-    outdir = outdir + date_time_str + "/"  # modify to include date
-
-    um_per_pixel = 3
-
+    um_per_pixel = 10
 
     ncores = 2 # Number of CPU processing cores used for kernel density estimation
 
@@ -84,7 +86,7 @@ for sample in files:
 
     bw=2.5 # IMPORTANT... but leave as default? # this should be set according to molecule density. 2-4 is a good range to explore.
 
-    outdir_kde = sample+"_kde_bw"+str(bw)+"pixPerum"+str(um_per_pixel)+"/"
+    outdir_kde = os.path.join(outdir,"kdes")#sample+"_kde_bw"+str(bw)+"pixPerum"+str(um_per_pixel)+"/"
 
     bw_ext='_bw'+str(bw)+'umPerPix'+str(um_per_pixel)
 
@@ -220,7 +222,7 @@ for sample in files:
 
     height = int((ymax - ymin) + 10)
 
-    ds = ssam.SSAMDataset(all_genes, [pos_dic[gene] for gene in all_genes], width, height)
+    ds = ssam.SSAMDataset(all_genes, [pos_dic[gene] for gene in all_genes], width, height,)
 
     ############################################################################################
     ### Run KDE and investigate expression and normalised expression thresholds
@@ -411,6 +413,11 @@ for sample in files:
             :type correlation_methods: list(tuple)
             """
             from matplotlib import colors
+            Image.MAX_IMAGE_PIXELS = 30000*30000
+
+            histo = Image.open(os.path.join(os.path.dirname(__file__),"..","..","data",sample_id,sample_id+"_HnE.tiff"))
+            histo = histo.resize(np.round(np.array(histo.size)/um_per_pixel*olympus_um_per_pixel).astype(int))
+
             if z is None:
                 z = int(self.vf_norm.shape[2] / 2)
             p, e = self.centroids[centroid_index], self.centroids_stdev[centroid_index]
@@ -430,14 +437,20 @@ for sample in files:
             mask = self.filtered_cluster_labels == centroid_index
             plt.scatter(self.local_maxs[0][mask], self.local_maxs[1][mask], c=[cluster_color])
             self.plot_l1norm(rotate=rotate, cmap="Greys", z=z)
+            # plt.imshow(histo,alpha=0.7)
             
             ax = plt.subplot(1, 4, 2)
             ctmap = np.zeros([self.filtered_celltype_maps.shape[0], self.filtered_celltype_maps.shape[1], 4])
             ctmap[self.filtered_celltype_maps[..., z] == centroid_index] = to_rgba(cluster_color)
-            ctmap[np.logical_and(self.filtered_celltype_maps[..., z] != centroid_index, self.filtered_celltype_maps[..., 0] > -1)] = [0.9, 0.9, 0.9, 1]
+            ctmap[self.filtered_celltype_maps[..., z] == centroid_index,-1]=0.5
+            ctmap[np.logical_and(self.filtered_celltype_maps[..., z] != centroid_index, self.filtered_celltype_maps[..., 0] > -1)] = [0.9, 0.9, 0.9,0.0]
             if rotate == 1 or rotate == 3:
                 ctmap = ctmap.swapaxes(0, 1)
-            ax.imshow(ctmap, interpolation='nearest')
+
+            ax.imshow(histo)
+
+            ax.imshow(ctmap[10:,10:], interpolation='nearest')
+
             if rotate == 1:
                 ax.invert_xaxis()
             elif rotate == 2:
@@ -508,7 +521,7 @@ for sample in files:
         plt.close()
 
 
-    np.save(outdir+"celltypefile.npy", ds.filtered_celltype_maps)
+    np.save(outdir+"celltype_map.npy", ds.filtered_celltype_maps)
 
     ############################################################################################
     ### print CSV of signatures

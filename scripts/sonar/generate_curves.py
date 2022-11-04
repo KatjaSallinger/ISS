@@ -33,9 +33,9 @@ linear_steps=20
 
 cell_color_file = sample_number+"_custom_colour_celltypes.csv"
 coordinate_file = sample_number+"_Decoded_LowThreshold.csv"
-cell_map_file = "celltypefile.npy"
+cell_map_file = "celltype_map.npy"
 data_path = os.path.join(os.path.dirname(__file__),"..","..","data",sample_number,)
-output_path = os.path.join(os.path.dirname(__file__),"..","..","output",sample_number,)
+output_path = os.path.join(os.path.dirname(__file__),"..","..","output",sample_number,"sonar")
 
 
 
@@ -50,6 +50,7 @@ colors["areas"]=[(celltype_map==i).sum() for i in range(len(colors))]
 plotting_colors=[colors[colors.celltype.str.startswith(ct)].iloc[-1,1] for ct in coi]
 
 os.makedirs(output_path,exist_ok=True)
+os.makedirs(os.path.join(output_path,"plotlines"),exist_ok=True)
 print(output_path)
 
 # %%
@@ -112,15 +113,21 @@ dm = rip.radial_integration()
 for reference in range(len(coi)):
     scaling_factor = rip.kernel_areas
 
+    plotlines = []
+
     plt.figure(figsize=(18,8))
 
     plt.subplot(121)
 
     for i in range(dm.shape[0]):
+        plotline = dm[reference,i]/scaling_factor/dm[reference,reference,0]
+
         if i<len(plotting_colors):
-            plt.plot(rip.radii, dm[reference,i]/scaling_factor/dm[reference,reference,0],color=plotting_colors[i])
+            plt.plot(rip.radii, plotline ,color=plotting_colors[i])
         else:
-            plt.plot(rip.radii, dm[reference,i]/scaling_factor/dm[reference,reference,0])
+            plt.plot(rip.radii, plotline)
+
+        plotlines.append(plotline)
 
     plt.legend(coi+goi)
 
@@ -133,6 +140,12 @@ for reference in range(len(coi)):
     plt.imshow(celltype_map,cmap=cmap,interpolation='none',vmin=-1,vmax=len(colors),alpha=alpha_mask)
     plt.tight_layout()
     plt.savefig(os.path.join(output_path,f'{coi[reference]}_coocurrences'))
+
+    # store in pandas.df and save:
+
+    plotline_df = pd.DataFrame(np.transpose(plotlines),columns=coi,index=rip.radii)
+    plotline_df.index.name='radius'
+    plotline_df.to_csv(os.path.join(output_path,"plotlines",f'{coi[reference]}_coocurrences.csv'))
 
 
 # %%
@@ -168,7 +181,7 @@ plt.savefig(os.path.join(output_path,'categories_of_interest_distribution'))
 
 ''
 
-# %%
+# save curves as excel files
 
 
 

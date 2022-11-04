@@ -266,7 +266,7 @@ class Ripley():
         self.radius=max_radius
         self.kernels,self.radii = _get_kernels(max_radius,linear_steps)
         self.n_steps=len(self.kernels)
-        print(self.kernels)
+        # print(self.kernels)
         self.kernel_areas = np.sum(self.kernels,-1).sum(-1)
 
         if cell_matrix is None:
