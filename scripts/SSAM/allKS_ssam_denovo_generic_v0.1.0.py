@@ -74,7 +74,7 @@ for sample_id in sample_ids:
 
     os.makedirs(outdir,exist_ok=True, mode = 0o777)
 
-    um_per_pixel = 10
+    um_per_pixel = 3
 
     ncores = 2 # Number of CPU processing cores used for kernel density estimation
 
@@ -416,7 +416,7 @@ for sample_id in sample_ids:
             Image.MAX_IMAGE_PIXELS = 30000*30000
 
             histo = Image.open(os.path.join(os.path.dirname(__file__),"..","..","data",sample_id,sample_id+"_HnE.tiff"))
-            histo = histo.resize(np.round(np.array(histo.size)/um_per_pixel*olympus_um_per_pixel).astype(int))
+            histo = histo.resize(np.round(np.array(histo.size)/um_per_pixel*4*olympus_um_per_pixel).astype(int))
 
             if z is None:
                 z = int(self.vf_norm.shape[2] / 2)
