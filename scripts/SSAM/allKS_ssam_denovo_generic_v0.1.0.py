@@ -38,7 +38,7 @@ from datetime import datetime
 
 # files = []
 
-sample_ids = ["219KS"]
+sample_ids = ["203KS", "204KS", "206KS", "207KS", "208KS", "209KS", "210KS", "217KS", "218KS", "219KS", "220KS", "233KS", "234KS", "235KS", "237KS", "251KS", "252KS", "253KS", "257KS", "258KS", "259KS", "260KS"]
 
 # for sample_id in os.listdiros.path.join(__file__,'../../data/all_csv_files') if file.endswith('.csv')]
 
